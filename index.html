@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Notes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <!-- Navigation Bar -->
+  <nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-4 lg:px-4">
+      <div class="flex items-center h-16">
+        <a href="#" class="text-2xl font-bold text-blue-600 ">Secure Notes</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white shadow-lg rounded-lg p-8">
+      <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Encrypted Notes</h1>
+      <div class="space-y-4">
+        <input 
+          type="password" 
+          id="passphrase" 
+          placeholder="Enter passphrase" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+        <textarea 
+          id="note" 
+          placeholder="Write your note here" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y h-48"
+        ></textarea>
+        <div class="flex space-x-4 justify-center">
+          <button 
+            onclick="saveNote()" 
+            class="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700"
+          >
+            Save
+          </button>
+          <button 
+            onclick="loadNote()" 
+            class="bg-gray-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-gray-700"
+          >
+            Load
+          </button>
+        </div>
+        <textarea 
+          id="sharedNote" 
+          placeholder="Paste shared encrypted note here" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y h-24"
+        ></textarea>
+        <div class="flex justify-center">
+          <button 
+            onclick="loadSharedNote()" 
+            class="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700"
+          >
+            Load Shared Note
+          </button>
+        </div>
+        <p id="status" class="text-center text-gray-600"></p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function deriveKey(passphrase, salt) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw", enc.encode(passphrase), "PBKDF2", false, ["deriveBits", "deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        { "name": "PBKDF2", salt: enc.encode(salt), "iterations": 100000, "hash": "SHA-256" },
+        keyMaterial, { "name": "AES-GCM", "length": 256 }, true, ["encrypt", "decrypt"]
+      );
+    }
+
+    async function saveNote() {
+      const passphrase = document.getElementById('passphrase').value;
+      const note = document.getElementById('note').value;
+      if (!passphrase || !note) {
+        document.getElementById('status').textContent = 'Passphrase and note required';
+        return;
+      }
+
+      const salt = 'randomsalt'; // In real, generate random salt per user
+      const key = await deriveKey(passphrase, salt);
+      const enc = new TextEncoder();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv }, key, enc.encode(note)
+      );
+
+      const encryptedStr = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+      const ivStr = btoa(String.fromCharCode(...iv));
+      const shareableData = JSON.stringify({ iv: ivStr, data: encryptedStr });
+      localStorage.setItem('encryptedNote', shareableData);
+      document.getElementById('sharedNote').value = shareableData;
+      document.getElementById('status').textContent = 'Note saved securely! Copy the text in the shared note box to share.';
+    }
+
+    async function loadNote() {
+      const passphrase = document.getElementById('passphrase').value;
+      const stored = localStorage.getItem('encryptedNote');
+      if (!stored) {
+        document.getElementById('status').textContent = 'No note saved locally';
+        return;
+      }
+
+      const { iv: ivStr, data: encryptedStr } = JSON.parse(stored);
+      const iv = new Uint8Array(atob(ivStr).split('').map(c => c.charCodeAt(0)));
+      const encrypted = new Uint8Array(atob(encryptedStr).split('').map(c => c.charCodeAt(0)));
+
+      const salt = 'randomsalt';
+      const key = await deriveKey(passphrase, salt);
+      try {
+        const decrypted = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv }, key, encrypted
+        );
+        const dec = new TextDecoder();
+        document.getElementById('note').value = dec.decode(decrypted);
+        document.getElementById('status').textContent = 'Note loaded!';
+      } catch (e) {
+        document.getElementById('status').textContent = 'Wrong passphrase';
+      }
+    }
+
+    async function loadSharedNote() {
+      const passphrase = document.getElementById('passphrase').value;
+      const sharedNote = document.getElementById('sharedNote').value;
+      if (!sharedNote) {
+        document.getElementById('status').textContent = 'Please paste a shared note';
+        return;
+      }
+
+      try {
+        const { iv: ivStr, data: encryptedStr } = JSON.parse(sharedNote);
+        const iv = new Uint8Array(atob(ivStr).split('').map(c => c.charCodeAt(0)));
+        const encrypted = new Uint8Array(atob(encryptedStr).split('').map(c => c.charCodeAt(0)));
+
+        const salt = 'randomsalt';
+        const key = await deriveKey(passphrase, salt);
+        const decrypted = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv }, key, encrypted
+        );
+        const dec = new TextDecoder();
+        document.getElementById('note').value = dec.decode(decrypted);
+        document.getElementById('status').textContent = 'Shared note loaded!';
+      } catch (e) {
+        document.getElementById('status').textContent = 'Invalid note or wrong passphrase';
+      }
+    }
+  </script>
+</body>
+</html>
