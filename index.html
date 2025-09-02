@@ -9,12 +9,12 @@
 <body class="bg-gray-100 font-sans">
   <!-- Navigation Bar -->
   <nav class="bg-white shadow-md sticky top-0 z-50">
-  <div class="max-w-4xl mx-auto px-4 sm:px-4 lg:px-4">
-    <div class="flex items-center justify-center h-12">
-      <a href="#" class="text-lg font-bold text-white bg-blue-600 px-3 py-1 rounded-md cursor-default" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">Secure Notes</a>
+    <div class="max-w-4xl mx-auto px-4 sm:px-4 lg:px-4">
+      <div class="flex items-center justify-center h-12">
+        <a href="#" class="text-lg font-bold text-white bg-blue-600 px-3 py-1 rounded-md cursor-default">Secure Notes</a>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
   <!-- Main Content -->
   <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -46,11 +46,23 @@
             Load
           </button>
         </div>
-        <textarea 
-          id="sharedNote" 
-          placeholder="Paste shared encrypted note here" 
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y h-24"
-        ></textarea>
+        <div class="relative">
+          <textarea 
+            id="sharedNote" 
+            placeholder="Paste shared encrypted note here" 
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 pr-10"
+            style="resize: none; overflow-y: auto;"
+          ></textarea>
+          <button 
+            onclick="copyToClipboard()" 
+            class="absolute top-2 right-2 w-6 h-6 p-1 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            title="Copy to clipboard"
+          >
+            <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </button>
+        </div>
         <div class="flex justify-center">
           <button 
             onclick="loadSharedNote()" 
@@ -84,7 +96,7 @@
         return;
       }
 
-      const salt = 'randomsalt'; // In real, generate random salt per user
+      const salt = 'randomsalt';
       const key = await deriveKey(passphrase, salt);
       const enc = new TextEncoder();
       const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -151,10 +163,13 @@
         document.getElementById('status').textContent = 'Invalid note or wrong passphrase';
       }
     }
+
+    function copyToClipboard() {
+      const sharedNote = document.getElementById('sharedNote');
+      sharedNote.select();
+      document.execCommand('copy');
+      document.getElementById('status').textContent = 'Copied to clipboard!';
+    }
   </script>
 </body>
-
 </html>
-
-
-
