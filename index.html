@@ -5,6 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secure Notes</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .spinner {
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .preview-container img, .preview-container audio, .preview-container video {
+      max-width: 100%;
+      margin: 10px 0;
+    }
+    .preview-container a {
+      display: block;
+      margin: 10px 0;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 font-sans">
   <!-- Navigation Bar -->
@@ -21,17 +45,34 @@
     <div class="bg-white shadow-lg rounded-lg p-8">
       <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Encrypted Notes</h1>
       <div class="space-y-4">
-        <input 
-          type="password" 
-          id="passphrase" 
-          placeholder="Enter passphrase" 
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-        <textarea 
-          id="note" 
-          placeholder="Write your note here" 
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y h-48"
-        ></textarea>
+        <div class="flex space-x-2">
+          <input 
+            type="password" 
+            id="passphrase" 
+            placeholder="Enter passphrase" 
+            class="w-1/2 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+          <select id="fileType" class="w-1/2 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="toggleInput()">
+            <option value="">Choose file type</option>
+            <option value="text">Text Note</option>
+            <option value="image">Image (jpg/jpeg/png/gif)</option>
+            <option value="audio">Audio (wav/mp3)</option>
+            <option value="video">Video (mp4)</option>
+            <option value="archive">Archive (zip)</option>
+            <option value="document">Document (txt/docx/ppt/xlsx/pdf)</option>
+          </select>
+        </div>
+        <div id="inputContainer" class="hidden">
+          <textarea 
+            id="note" 
+            placeholder="Write your note here" 
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y h-48"
+          ></textarea>
+        </div>
+        <div id="fileInputContainer" class="hidden">
+          <input type="file" id="fileInput" accept="" multiple class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="handleFiles(this.files)">
+          <ul id="fileList" class="list-disc pl-5 mt-2"></ul>
+        </div>
         <div class="flex space-x-4 justify-center">
           <button 
             onclick="saveNote()" 
@@ -40,6 +81,7 @@
             Save
           </button>
         </div>
+        <div id="spinner" class="spinner"></div>
         <div class="relative">
           <textarea 
             id="sharedNote" 
@@ -66,6 +108,7 @@
           </button>
         </div>
         <p id="status" class="text-center text-gray-600"></p>
+        <div id="outputContainer" class="text-center"></div>
       </div>
     </div>
   </main>
@@ -82,53 +125,139 @@
       );
     }
 
-    async function saveNote() {
-      const passphrase = document.getElementById('passphrase').value;
-      const note = document.getElementById('note').value;
-      if (!passphrase || !note) {
-        document.getElementById('status').textContent = 'Passphrase and note required';
-        return;
+    function toggleInput() {
+      const type = document.getElementById('fileType').value;
+      const inputContainer = document.getElementById('inputContainer');
+      const fileInputContainer = document.getElementById('fileInputContainer');
+      inputContainer.classList.add('hidden');
+      fileInputContainer.classList.add('hidden');
+      if (type === 'text') {
+        inputContainer.classList.remove('hidden');
+      } else if (type) {
+        fileInputContainer.classList.remove('hidden');
+        document.getElementById('fileInput').accept = getAccept(type);
       }
-
-      const salt = 'randomsalt';
-      const key = await deriveKey(passphrase, salt);
-      const enc = new TextEncoder();
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encrypted = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv }, key, enc.encode(note)
-      );
-
-      const encryptedStr = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-      const ivStr = btoa(String.fromCharCode(...iv));
-      const shareableData = JSON.stringify({ iv: ivStr, data: encryptedStr });
-      localStorage.setItem('encryptedNote', shareableData);
-      document.getElementById('sharedNote').value = shareableData;
-      document.getElementById('status').textContent = 'Note saved securely! Copy the text in the shared note box to share.';
     }
 
-    async function loadNote() {
+    function getAccept(type) {
+      const types = {
+        image: 'image/jpeg,image/jpg,image/png,image/gif',
+        audio: 'audio/wav,audio/mpeg',
+        video: 'video/mp4',
+        archive: 'application/zip',
+        document: 'text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/pdf'
+      };
+      return types[type] || '*/*';
+    }
+
+    let fileList = [];
+    function handleFiles(files) {
+      const newFiles = Array.from(files);
+      newFiles.forEach(file => {
+        // prevent duplicates by checking name + size
+        if (!fileList.some(f => f.name === file.name && f.size === file.size)) {
+          fileList.push(file);
+        }
+      });
+      console.log('Files added:', fileList.map(f => f.name));
+      updateFileListUI();
+    }
+
+    function updateFileListUI() {
+      const fileListElement = document.getElementById('fileList');
+      fileListElement.innerHTML = '';
+      fileList.forEach((file, index) => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center';
+        li.textContent = file.name;
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.className = 'ml-2 bg-red-600 text-white px-1.5 py-0.5 rounded hover:bg-red-700 text-xs';
+        removeButton.onclick = () => removeFile(index);
+        li.appendChild(removeButton);
+        fileListElement.appendChild(li);
+      });
+    }
+
+    function removeFile(index) {
+      fileList.splice(index, 1);
+      updateFileListUI();
+    }
+
+    async function saveNote() {
       const passphrase = document.getElementById('passphrase').value;
-      const stored = localStorage.getItem('encryptedNote');
-      if (!stored) {
-        document.getElementById('status').textContent = 'No note saved locally';
+      const type = document.getElementById('fileType').value;
+      if (!passphrase || !type) {
+        document.getElementById('status').textContent = 'Passphrase and file type required';
         return;
       }
 
-      const { iv: ivStr, data: encryptedStr } = JSON.parse(stored);
-      const iv = new Uint8Array(atob(ivStr).split('').map(c => c.charCodeAt(0)));
-      const encrypted = new Uint8Array(atob(encryptedStr).split('').map(c => c.charCodeAt(0)));
+      const spinner = document.getElementById('spinner');
+      if (type !== 'text') spinner.style.display = 'block';
 
-      const salt = 'randomsalt';
-      const key = await deriveKey(passphrase, salt);
+      let dataArray = [];
+      let mimeArray = [];
       try {
-        const decrypted = await crypto.subtle.decrypt(
-          { name: "AES-GCM", iv }, key, encrypted
-        );
-        const dec = new TextDecoder();
-        document.getElementById('note').value = dec.decode(decrypted);
-        document.getElementById('status').textContent = 'Note loaded!';
+        if (type === 'text') {
+          const note = document.getElementById('note').value;
+          if (!note) {
+            document.getElementById('status').textContent = 'Note required';
+            spinner.style.display = 'none';
+            return;
+          }
+          dataArray.push(new TextEncoder().encode(note));
+          mimeArray.push('text/plain');
+        } else {
+          if (fileList.length === 0) {
+            document.getElementById('status').textContent = 'File(s) required';
+            spinner.style.display = 'none';
+            return;
+          }
+          for (let file of fileList) {
+            if (file.size > 10 * 1024 * 1024) {
+              document.getElementById('status').textContent = 'File too large (max 10MB)';
+              spinner.style.display = 'none';
+              return;
+            }
+            mimeArray.push(file.type || 'application/octet-stream');
+            console.log(`Reading file: ${file.name}`);
+            dataArray.push(await file.arrayBuffer());
+            console.log(`File ${file.name} read successfully`);
+          }
+        }
+
+        const encryptedData = [];
+        for (let data of dataArray) {
+          const salt = btoa(Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => String.fromCharCode(b)).join(''));
+          const key = await deriveKey(passphrase, salt);
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          console.log('Encrypting data...');
+          const encrypted = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: iv }, key, data
+          );
+          encryptedData.push({ iv: btoa(Array.from(iv).map(b => String.fromCharCode(b)).join('')), data: btoa(Array.from(new Uint8Array(encrypted)).map(b => String.fromCharCode(b)).join('')), salt: salt });
+          console.log('Encryption completed for one item');
+        }
+
+        const shareableData = JSON.stringify({ type: type, data: encryptedData, mime: mimeArray });
+        if (shareableData) {
+          localStorage.setItem('encryptedNote', shareableData);
+          document.getElementById('sharedNote').value = shareableData;
+          document.getElementById('status').textContent = 'Note/File(s) saved securely! Copy the text in the shared note box to share.';
+        } else {
+          document.getElementById('status').textContent = 'Error generating encrypted data';
+        }
       } catch (e) {
-        document.getElementById('status').textContent = 'Wrong passphrase';
+        console.error('Save error:', e);
+        document.getElementById('status').textContent = 'Error saving note/file: ' + e.message;
+      } finally {
+        spinner.style.display = 'none';
+        setTimeout(() => {
+          if (spinner.style.display !== 'none') {
+            spinner.style.display = 'none';
+            document.getElementById('status').textContent = 'Operation timed out (over 10s)';
+          }
+        }, 10000);
       }
     }
 
@@ -140,22 +269,81 @@
         return;
       }
 
+      const outputContainer = document.getElementById('outputContainer');
+      outputContainer.innerHTML = '';
       try {
-        const { iv: ivStr, data: encryptedStr } = JSON.parse(sharedNote);
-        const iv = new Uint8Array(atob(ivStr).split('').map(c => c.charCodeAt(0)));
-        const encrypted = new Uint8Array(atob(encryptedStr).split('').map(c => c.charCodeAt(0)));
+        const { type, data: encryptedData, mime } = JSON.parse(sharedNote);
+        if (!encryptedData || !Array.isArray(encryptedData)) {
+          // Backward compatibility for old text notes
+          const { iv: ivStr, data: encryptedStr, salt } = JSON.parse(sharedNote);
+          const iv = new Uint8Array(atob(ivStr).split('').map(c => c.charCodeAt(0)));
+          const encrypted = new Uint8Array(atob(encryptedStr).split('').map(c => c.charCodeAt(0)));
+          const key = await deriveKey(passphrase, salt);
+          const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv }, key, encrypted
+          );
+          document.getElementById('note').value = new TextDecoder().decode(decrypted);
+          document.getElementById('status').textContent = 'Shared note loaded!';
+          return;
+        }
 
-        const salt = 'randomsalt';
-        const key = await deriveKey(passphrase, salt);
-        const decrypted = await crypto.subtle.decrypt(
-          { name: "AES-GCM", iv }, key, encrypted
-        );
-        const dec = new TextDecoder();
-        document.getElementById('note').value = dec.decode(decrypted);
-        document.getElementById('status').textContent = 'Shared note loaded!';
+        for (let i = 0; i < encryptedData.length; i++) {
+          const { iv, data, salt } = encryptedData[i];
+          const ivArray = new Uint8Array(atob(iv).split('').map(c => c.charCodeAt(0)));
+          const encrypted = new Uint8Array(atob(data).split('').map(c => c.charCodeAt(0)));
+          const key = await deriveKey(passphrase, salt);
+          console.log('Decrypting data...');
+          const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: ivArray }, key, encrypted
+          );
+          console.log('Decryption completed for one item');
+
+          const blob = new Blob([decrypted], { type: mime[i] || 'application/octet-stream' });
+          if (type === 'text') {
+            document.getElementById('note').value = new TextDecoder().decode(decrypted);
+          } else {
+            const container = document.createElement('div');
+            container.className = 'preview-container';
+            if (mime[i].startsWith('image/') || mime[i].startsWith('audio/') || mime[i].startsWith('video/')) {
+              const preview = document.createElement(mime[i].startsWith('image/') ? 'img' : mime[i].startsWith('audio/') ? 'audio' : 'video');
+              preview.controls = mime[i].startsWith('audio/') || mime[i].startsWith('video/');
+              preview.src = URL.createObjectURL(blob);
+              if (mime[i].startsWith('image/')) preview.style.maxWidth = '100%';
+              container.appendChild(preview);
+            } else {
+              const previewLink = document.createElement('a');
+              previewLink.href = URL.createObjectURL(blob);
+              previewLink.textContent = `Preview ${getExtension(mime[i])}`;
+              previewLink.target = '_blank';
+              container.appendChild(previewLink);
+            }
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = `decrypted_file_${i + 1}.${getExtension(mime[i])}`;
+            downloadLink.textContent = `Download ${getExtension(mime[i])}`;
+            downloadLink.className = 'bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700';
+            container.appendChild(downloadLink);
+            outputContainer.appendChild(container);
+          }
+        }
+        document.getElementById('status').textContent = 'Shared file(s) loaded!';
       } catch (e) {
+        console.error('Decryption error:', e);
         document.getElementById('status').textContent = 'Invalid note or wrong passphrase';
       }
+    }
+
+    function getExtension(mime) {
+      const extensions = {
+        'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif',
+        'audio/wav': 'wav', 'audio/mpeg': 'mp3',
+        'video/mp4': 'mp4',
+        'application/zip': 'zip',
+        'text/plain': 'txt', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+        'application/vnd.ms-powerpoint': 'ppt', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx', 'application/pdf': 'pdf'
+      };
+      return extensions[mime] || 'bin';
     }
 
     function copyToClipboard() {
