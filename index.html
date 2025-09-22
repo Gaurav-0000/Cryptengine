@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secure Notes</title>
   <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-100 font-sans">
@@ -18,15 +16,6 @@
       </div>
     </div>
   </nav>
-<h2>Simple CAPTCHA Form</h2>
-  <form action="verify.php" method="POST">
-    <input type="text" name="username" placeholder="Enter Username" required><br><br>
-
-    <!-- reCAPTCHA Widget -->
-    <div class="g-recaptcha" data-sitekey="6LdwV9ErAAAAAINmdBD3GxTkvEBR0x2mdP6ecCuK"></div><br>
-
-    <input type="submit" value="Submit">
-  </form>
   <!-- Main Content -->
   <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <div class="bg-white shadow-lg rounded-lg p-8">
@@ -103,4 +92,5 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
