@@ -287,6 +287,13 @@
           return;
         }
 
+        // Automatically set the file type based on the sender's specification without showing file input
+        const fileTypeSelect = document.getElementById('fileType');
+        fileTypeSelect.value = type; // Set the dropdown to the sender's type
+        if (type === 'text') {
+          toggleInput(); // Only call toggleInput for text to show the textarea
+        }
+
         for (let i = 0; i < encryptedData.length; i++) {
           const { iv, data, salt } = encryptedData[i];
           const ivArray = new Uint8Array(atob(iv).split('').map(c => c.charCodeAt(0)));
