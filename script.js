@@ -169,6 +169,12 @@ async function loadSharedNote() {
       return;
     }
 
+    const fileTypeSelect = document.getElementById('fileType');
+    fileTypeSelect.value = type;
+    if (type === 'text') {
+      toggleInput();
+    }
+
     for (let i = 0; i < encryptedData.length; i++) {
       const { iv, data, salt } = encryptedData[i];
       const ivArray = new Uint8Array(atob(iv).split('').map(c => c.charCodeAt(0)));
