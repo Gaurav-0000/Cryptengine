@@ -1,94 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secure Notes</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body class="bg-gray-100 font-sans">
-  <!-- Navigation Bar -->
-  <nav class="bg-white shadow-md sticky top-0 z-50">
-    <div class="max-w-4xl mx-auto px-4 sm:px-4 lg:px-4">
-      <div class="flex items-center justify-center h-12">
-        <a href="#" class="text-lg font-bold text-white bg-blue-600 px-3 py-1 rounded-md cursor-default">Secure Notes</a>
-      </div>
-    </div>
-  </nav>
-  <!-- Main Content -->
-  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="bg-white shadow-lg rounded-lg p-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Encrypted Notes</h1>
-      <div class="space-y-4">
-        <div class="flex space-x-2">
-          <input 
-            type="password" 
-            id="passphrase" 
-            placeholder="Enter passphrase" 
-            class="w-1/2 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-          <select id="fileType" class="w-1/2 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="toggleInput()">
-            <option value="">Choose file type</option>
-            <option value="text">Text Note</option>
-            <option value="image">Image (jpg/jpeg/png/gif)</option>
-            <option value="audio">Audio (wav/mp3)</option>
-            <option value="video">Video (mp4)</option>
-            <option value="archive">Archive (zip)</option>
-            <option value="document">Document (txt/docx/ppt/xlsx/pdf)</option>
-          </select>
-        </div>
-        <div id="inputContainer" class="hidden">
-          <textarea 
-            id="note" 
-            placeholder="Write your note here" 
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y h-48"
-          ></textarea>
-        </div>
-        <div id="fileInputContainer" class="hidden">
-          <input type="file" id="fileInput" accept="" multiple class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="handleFiles(this.files)">
-          <ul id="fileList" class="list-disc pl-5 mt-2"></ul>
-        </div>
-        <div class="flex space-x-4 justify-center">
-          <button 
-            onclick="saveNote()" 
-            class="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-        <div id="spinner" class="spinner"></div>
-        <div class="relative">
-          <textarea 
-            id="sharedNote" 
-            placeholder="Paste shared encrypted note here" 
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 pr-10"
-            style="resize: none; overflow-y: auto;"
-          ></textarea>
-          <button 
-            onclick="copyToClipboard()" 
-            class="absolute top-2 right-2 w-6 h-6 p-1 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            title="Copy to clipboard"
-          >
-            <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-            </svg>
-          </button>
-        </div>
-        <div class="flex justify-center">
-          <button 
-            onclick="loadSharedNote()" 
-            class="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700"
-          >
-            Load Shared Note
-          </button>
-        </div>
-        <p id="status" class="text-center text-gray-600"></p>
-        <div id="outputContainer" class="text-center"></div>
-      </div>
-    </div>
-  </main>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Notes - Secure Encryption Terminal (WebCrypto)</title>
 
-  <script src="script.js"></script>
-</body>
+    <!-- Tailwind (kept as before) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- External CSS (moved from inline style) -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body onpageshow="if (event.persisted) window.location.reload();">
+    <!-- Navigation Bar -->
+    <nav
+      class="border-b border-green-500/30 sticky top-0 z-50 backdrop-blur-md"
+    >
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex items-center justify-center h-16">
+          <div class="flex items-center space-x-2">
+            <svg
+              class="w-8 h-8 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+            <h1 class="terminal-header text-2xl">SECURE NOTES</h1>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 py-12">
+      <div class="cyber-panel rounded-lg p-8">
+        <!-- Mode Selection -->
+        <div class="flex justify-center mb-8">
+          <div class="bg-black/50 p-1 rounded-lg border border-green-500/30">
+            <button
+              id="encryptBtn"
+              onclick="setMode('encrypt')"
+              class="cyber-button cyber-button-active px-8 py-3 rounded-md font-bold"
+            >
+              [ ENCRYPT ]
+            </button>
+            <button
+              id="decryptBtn"
+              onclick="setMode('decrypt')"
+              class="cyber-button px-8 py-3 rounded-md font-bold"
+            >
+              [ DECRYPT ]
+            </button>
+          </div>
+        </div>
+
+        <h1
+          id="pageTitle"
+          class="text-3xl font-bold text-center mb-8 section-header"
+          style="color: var(--cyber-green); font-family: 'Orbitron', sans-serif"
+        >
+          ENCRYPTION TERMINAL
+        </h1>
+
+        <div class="space-y-6">
+          <!-- Passphrase + filetype/upload row -->
+          <div class="flex space-x-3">
+            <input
+              type="password"
+              id="passphrase"
+              placeholder="ENTER PASSPHRASE"
+              class="terminal-input w-1/2 px-4 py-3 rounded"
+            />
+
+            <!-- Original dropdown used in encrypt mode -->
+            <select
+              id="fileType"
+              autocomplete="off"
+              class="terminal-input w-1/2 px-4 py-3 rounded"
+              onchange="toggleInput()"
+            >
+              <option value="">SELECT FILE TYPE</option>
+              <option value="text">TEXT NOTE</option>
+              <option value="image">IMAGE [JPG/PNG/GIF]</option>
+              <option value="audio">AUDIO [WAV/MP3]</option>
+              <option value="video">VIDEO [MP4]</option>
+              <option value="archive">ARCHIVE [ZIP]</option>
+              <option value="document">DOCUMENT [TXT/DOCX/PDF]</option>
+            </select>
+
+            <!-- Decrypt-mode upload (hidden by default) — placed in the same spot as the dropdown so it sits to the right of passphrase -->
+            <div id="decryptFileContainer" class="hidden w-1/2">
+              <input
+                type="file"
+                id="decryptFileInput"
+                accept=".enc,.txt"
+                class="hidden"
+                onchange="handleDecryptFile(this.files)"
+              />
+              <div class="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onclick="document.getElementById('decryptFileInput').click()"
+                  id="decryptFileBtn"
+                  class="cyber-button px-6 py-3 rounded font-mono"
+                >
+                  [ UPLOAD .enc / .txt ]
+                </button>
+                <p
+                  id="decryptFileLabel"
+                  class="text-green-500/70 font-mono text-sm whitespace-nowrap"
+                >
+                  NO FILE SELECTED
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="inputContainer" class="hidden">
+            <textarea
+              id="note"
+              placeholder="Write your message here..."
+              class="terminal-input w-full px-4 py-3 rounded resize-y h-48"
+            ></textarea>
+          </div>
+
+          <div id="fileInputContainer" class="hidden">
+            <input
+              type="file"
+              id="fileInput"
+              accept=""
+              multiple
+              class="hidden"
+              onchange="handleFiles(this.files)"
+            />
+            <button
+              type="button"
+              onclick="document.getElementById('fileInput').click()"
+              class="cyber-button px-6 py-3 rounded font-bold"
+            >
+              [ SELECT FILES ]
+            </button>
+            <p id="fileStatus" class="text-green-500/70 mt-2 font-mono">
+              NO FILES SELECTED
+            </p>
+            <ul id="fileList" class="cyber-list mt-3 text-green-500"></ul>
+          </div>
+
+          <div id="encryptSection" class="flex space-x-4 justify-center">
+            <button
+              onclick="saveNote()"
+              class="cyber-button px-10 py-3 rounded font-bold"
+            >
+              [ EXECUTE ENCRYPTION ]
+            </button>
+          </div>
+
+          <div id="spinner" class="spinner"></div>
+
+          <div class="relative">
+            <textarea
+              id="sharedNote"
+              placeholder="ENCRYPTED_DATA_BUFFER..."
+              class="terminal-input w-full px-4 py-3 rounded pr-12"
+              style="resize: none; overflow-y: auto; min-height: 100px"
+            ></textarea>
+            <button
+              id="copyBtn"
+              onclick="copyToClipboard()"
+              class="absolute top-3 right-3 p-2 rounded cyber-button"
+              title="Copy to clipboard"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div id="decryptSection" class="flex justify-center">
+            <button
+              onclick="loadSharedNote()"
+              class="cyber-button px-10 py-3 rounded font-bold"
+            >
+              [ DECRYPT DATA ]
+            </button>
+          </div>
+
+          <p
+            id="status"
+            class="text-center font-mono text-lg text-[#00ff41]"
+          ></p>
+          <div id="outputContainer" class="text-center"></div>
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div class="cyber-panel rounded-lg p-8 mt-8">
+        <h2
+          class="text-2xl font-bold mb-6 section-header"
+          style="color: var(--cyber-green); font-family: 'Orbitron', sans-serif"
+        >
+          ENCRYPTION HISTORY [UPTO LAST 5 ENCRYPTIONS]
+        </h2>
+        <ul id="historyList" class="cyber-list text-green-500"></ul>
+      </div>
+    </main>
+
+    <!-- External JS (moved from inline script) -->
+    <script src="script.js"></script>
+  </body>
 </html>
