@@ -8,6 +8,7 @@
   --dark-bg: #0a0e1b;
   --darker-bg: #050709;
 }
+
 * {
   box-sizing: border-box;
 }
@@ -17,7 +18,6 @@ body {
   position: relative;
   overflow-x: hidden;
 }
-/* Animated Background */
 body::before {
   content: "";
   position: fixed;
@@ -64,19 +64,11 @@ body::after {
   background-size: 50px 50px;
   z-index: -1;
 }
-@keyframes glitch {
-  /* shortened for brevity */
-}
-.glitch {
-  animation: glitch 2s infinite;
-}
-
 .terminal-input {
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid var(--cyber-green);
   color: var(--cyber-green);
   font-family: "Share Tech Mono", monospace;
-  position: relative;
   transition: all 0.3s ease;
 }
 .terminal-input:focus {
@@ -88,7 +80,6 @@ body::after {
 .terminal-input::placeholder {
   color: rgba(0, 255, 65, 0.4);
 }
-
 .cyber-button {
   background: linear-gradient(
     135deg,
@@ -140,33 +131,10 @@ body::after {
   box-shadow: 0 0 30px rgba(0, 212, 255, 0.6),
     inset 0 0 20px rgba(0, 212, 255, 0.2);
 }
-
 .cyber-panel {
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 20, 40, 0.7));
   border: 1px solid rgba(0, 255, 65, 0.3);
   box-shadow: 0 0 30px rgba(0, 255, 65, 0.1), inset 0 0 30px rgba(0, 0, 0, 0.5);
-  position: relative;
-}
-.cyber-panel::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--cyber-green),
-    transparent
-  );
-}
-
-input[type="file"] {
-  color: transparent;
-}
-input[type="file"]::file-selector-button {
-  color: var(--cyber-green);
 }
 .spinner {
   width: 2rem;
@@ -187,28 +155,6 @@ input[type="file"]::file-selector-button {
     transform: rotate(360deg);
   }
 }
-.preview-container img,
-.preview-container audio,
-.preview-container video {
-  max-width: 100%;
-  margin: 10px 0;
-  border: 1px solid var(--cyber-green);
-  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
-}
-.preview-container a {
-  display: inline-block;
-  margin: 10px 5px;
-}
-
-.status-success {
-  color: var(--cyber-green);
-  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
-}
-.status-error {
-  color: var(--cyber-red);
-  text-shadow: 0 0 10px rgba(255, 0, 64, 0.5);
-}
-
 .terminal-header {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
@@ -228,11 +174,6 @@ input[type="file"]::file-selector-button {
   border-left-color: var(--cyber-blue);
   padding-left: 20px;
 }
-.section-header {
-  position: relative;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-}
 .section-header::after {
   content: "";
   position: absolute;
@@ -241,4 +182,62 @@ input[type="file"]::file-selector-button {
   width: 100%;
   height: 1px;
   background: linear-gradient(90deg, var(--cyber-green), transparent);
+}
+
+/* Mobile / small-screen tweaks */
+@media (max-width: 640px) {
+  .cyber-panel {
+    padding: 1rem;
+  }
+  .terminal-header {
+    font-size: 1.25rem;
+  }
+  .terminal-input {
+    font-size: 0.95rem;
+    padding: 0.65rem 0.75rem;
+  }
+  .cyber-button {
+    font-size: 0.95rem;
+    padding: 0.5rem 0.75rem;
+    letter-spacing: 1px;
+  }
+  .spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .cyber-list li {
+    font-size: 0.95rem;
+  }
+  .preview-container img,
+  .preview-container video,
+  .preview-container audio {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .mode-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  .mode-container > div {
+    width: fit-content;
+    margin: 0 auto;
+  }
+
+  #encryptBtn,
+  #decryptBtn {
+    display: block;
+    width: 100%;
+    margin: 4px 0;
+  }
+  #decryptFileContainer .flex {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  #decryptFileLabel {
+    margin-top: 0.25rem;
+  }
 }
