@@ -188,7 +188,8 @@
       inputContainer.classList.add("hidden");
       fileInputContainer.classList.add("hidden");
       passphraseInput.value = lastEncryptPassphrase;
-      passphraseInput.className = "terminal-input w-1/2 px-4 py-3 rounded";
+      passphraseInput.className =
+        "terminal-input w-full sm:w-1/2 px-4 py-3 rounded";
       savedFileList = [...savedFileList];
       noteInput.value = savedNote;
       toggleInput();
@@ -213,7 +214,8 @@
       fileInputContainer.classList.add("hidden");
       lastEncryptPassphrase = passphraseInput.value;
       passphraseInput.value = "";
-      passphraseInput.className = "terminal-input w-1/2 px-4 py-3 rounded"; // half width in decrypt mode
+      passphraseInput.className =
+        "terminal-input w-full sm:w-1/2 px-4 py-3 rounded"; // responsive width in decrypt mode
       savedFileList = [...savedFileList];
       savedNote = noteInput.value;
       document.getElementById("status").textContent = "";
