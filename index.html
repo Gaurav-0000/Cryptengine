@@ -3,16 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cryptengine - Encrypt Everything. Instantly. </title>
+    <title>Cryptengine - Encrypt Everything. Instantly.</title>
     <link
       rel="icon"
       type="image/png"
-      href="Screenshot_2025-10-30_212314-removebg-preview.png"
+      href="images/Screenshot_2025-10-30_212314-removebg-preview.png"
     />
-    <!-- Tailwind (kept as before) -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- External CSS (moved from inline style) -->
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body onpageshow="if (event.persisted) window.location.reload();">
@@ -36,7 +33,7 @@
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
               />
             </svg>
-            <h1 class="terminal-header text-2xl">CRYPTENGINE</h1>
+            <h1 class="terminal-header text-2xl">SECURE NOTES</h1>
           </div>
         </div>
       </div>
@@ -46,7 +43,7 @@
     <main class="max-w-5xl mx-auto px-4 py-12">
       <div class="cyber-panel rounded-lg p-8">
         <!-- Mode Selection -->
-        <div class="flex justify-center mb-8">
+        <div class="mode-container flex justify-center mb-8">
           <div class="bg-black/50 p-1 rounded-lg border border-green-500/30">
             <button
               id="encryptBtn"
@@ -75,19 +72,20 @@
 
         <div class="space-y-6">
           <!-- Passphrase + filetype/upload row -->
-          <div class="flex space-x-3">
+          <div
+            class="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0"
+          >
             <input
               type="password"
               id="passphrase"
               placeholder="ENTER PASSPHRASE"
-              class="terminal-input w-1/2 px-4 py-3 rounded"
+              class="terminal-input w-full sm:w-1/2 px-4 py-3 rounded"
             />
 
-            <!-- Original dropdown used in encrypt mode -->
             <select
               id="fileType"
               autocomplete="off"
-              class="terminal-input w-1/2 px-4 py-3 rounded"
+              class="terminal-input w-full sm:w-1/2 px-4 py-3 rounded"
               onchange="toggleInput()"
             >
               <option value="">SELECT FILE TYPE</option>
@@ -99,8 +97,7 @@
               <option value="document">DOCUMENT [TXT/DOCX/PDF]</option>
             </select>
 
-            <!-- Decrypt-mode upload (hidden by default) — placed in the same spot as the dropdown so it sits to the right of passphrase -->
-            <div id="decryptFileContainer" class="hidden w-1/2">
+            <div id="decryptFileContainer" class="hidden sm:w-1/2">
               <input
                 type="file"
                 id="decryptFileInput"
@@ -113,7 +110,7 @@
                   type="button"
                   onclick="document.getElementById('decryptFileInput').click()"
                   id="decryptFileBtn"
-                  class="cyber-button px-6 py-3 rounded font-mono"
+                  class="cyber-button px-6 py-3 rounded font-mono w-full sm:w-auto"
                 >
                   [ UPLOAD .enc / .txt ]
                 </button>
@@ -135,7 +132,7 @@
             ></textarea>
           </div>
 
-          <div id="fileInputContainer" class="hidden">
+          <div id="fileInputContainer" class="hidden w-full">
             <input
               type="file"
               id="fileInput"
@@ -147,7 +144,7 @@
             <button
               type="button"
               onclick="document.getElementById('fileInput').click()"
-              class="cyber-button px-6 py-3 rounded font-bold"
+              class="cyber-button px-6 py-3 rounded font-bold w-full sm:w-auto"
             >
               [ SELECT FILES ]
             </button>
@@ -157,10 +154,13 @@
             <ul id="fileList" class="cyber-list mt-3 text-green-500"></ul>
           </div>
 
-          <div id="encryptSection" class="flex space-x-4 justify-center">
+          <div
+            id="encryptSection"
+            class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 justify-center items-center"
+          >
             <button
               onclick="saveNote()"
-              class="cyber-button px-10 py-3 rounded font-bold"
+              class="cyber-button px-10 py-3 rounded font-bold w-full sm:w-auto"
             >
               [ EXECUTE ENCRYPTION ]
             </button>
@@ -200,7 +200,7 @@
           <div id="decryptSection" class="flex justify-center">
             <button
               onclick="loadSharedNote()"
-              class="cyber-button px-10 py-3 rounded font-bold"
+              class="cyber-button px-10 py-3 rounded font-bold w-full sm:w-auto"
             >
               [ DECRYPT DATA ]
             </button>
@@ -226,9 +226,6 @@
       </div>
     </main>
 
-    <!-- External JS (moved from inline script) -->
     <script src="script.js"></script>
   </body>
 </html>
-
-
