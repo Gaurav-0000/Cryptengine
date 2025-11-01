@@ -389,7 +389,7 @@
       if (shareableData) {
         document.getElementById("sharedNote").value = shareableData;
         document.getElementById("status").textContent =
-          "Note/File(s) encrypted successfully! Copy the encrypted text to share.";
+          "✅ Note/File(s) encrypted successfully! Copy the encrypted text to share.";
         const historyCount = history.length + 1;
         history.unshift({
           id: "Encryption " + historyCount,
@@ -459,7 +459,7 @@
         // fallback legacy structure which had iv, data, salt at top-level
         const { iv: ivStr, data: encryptedStr, salt } = parsed;
         if (!ivStr || !encryptedStr || !salt)
-          throw new Error("Invalid legacy encrypted format");
+          throw new Error("⚠️ Invalid legacy encrypted format");
 
         const ivU8 = base64ToU8(ivStr);
         const ciphertextWithTag = base64ToU8(encryptedStr);
@@ -472,7 +472,7 @@
           // Authentication/Integrity failed (wrong passphrase or tampered)
           console.warn("Decryption/auth failed (legacy):", err);
           document.getElementById("status").textContent =
-            "Invalid Encrypted note or wrong passphrase.";
+            "⚠️ Invalid Encrypted note or wrong passphrase.";
           return;
         }
 
@@ -487,7 +487,7 @@
       // modern multi-item format
       const { type, data: encryptedData, mime } = parsed;
       if (!encryptedData || !Array.isArray(encryptedData))
-        throw new Error("Invalid encrypted payload");
+        throw new Error("⚠️ Invalid encrypted payload");
 
       // If the sender included a file-type suggestion, set it silently
       const fileTypeSelect = document.getElementById("fileType");
@@ -512,7 +512,7 @@
           // Authentication/Integrity failed for this item
           console.warn("Decryption/auth failed for item", i, err);
           document.getElementById("status").textContent =
-            "Invalid Encrypted note or wrong passphrase.";
+            "⚠️ Invalid Encrypted note or wrong passphrase.";
           return;
         }
 
@@ -569,11 +569,11 @@
       }
 
       document.getElementById("status").textContent =
-        "File(s) decrypted successfully!";
+        "✅ File(s) decrypted successfully!";
     } catch (e) {
       console.error("Decryption error:", e);
       document.getElementById("status").textContent =
-        "Invalid Encrypted note or wrong passphrase.";
+        "⚠️ Invalid Encrypted note or wrong passphrase.";
     }
   }
 
@@ -740,3 +740,4 @@
     }
   });
 })();
+
