@@ -1,4 +1,4 @@
-f(async function () {
+(async function () {
   // --- Utilities ------------------------------------------------------------
 
   function u8ToBase64(u8) {
@@ -162,7 +162,6 @@ f(async function () {
     const decryptSection = document.getElementById("decryptSection");
     const sharedNote = document.getElementById("sharedNote");
     const fileTypeSelect = document.getElementById("fileType");
-    const outputContainer = document.getElementById("outputContainer");
     const passphraseInput = document.getElementById("passphrase");
     const inputContainer = document.getElementById("inputContainer");
     const fileInputContainer = document.getElementById("fileInputContainer");
@@ -200,10 +199,6 @@ f(async function () {
       document.getElementById("status").textContent = "";
       decryptUploadedContent = "";
       decryptUploadedFilename = "";
-      if (outputContainer) {
-        outputContainer.innerHTML = "";
-        outputContainer.style.display = "none";
-      }
     } else {
       decryptBtn.classList.add("cyber-button-active");
       pageTitle.textContent = "Decryption Terminal";
@@ -228,9 +223,6 @@ f(async function () {
       decryptUploadedFilename = "";
       document.getElementById("decryptFileLabel").textContent =
         "NO FILE SELECTED";
-      if (outputContainer) {
-        outputContainer.style.display = "block";
-      }
     }
 
     isModeSwitch = false;
@@ -748,5 +740,3 @@ f(async function () {
     }
   });
 })();
-
-
